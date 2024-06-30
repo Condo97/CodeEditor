@@ -14,36 +14,8 @@ import SwiftUI
   typealias UXViewRepresentable = UIViewRepresentable
 #endif
 
-/**
- * Move the gritty details out of the main representable.
- */
 struct UXCodeTextViewRepresentable : UXViewRepresentable {
-  
-  /**
-   * Configures a CodeEditor View with the given parameters.
-   *
-   * - Parameters:
-   *   - source:      A binding to a String that holds the source code to be
-   *                  edited (or displayed).
-   *   - language:    Optionally set a language (e.g. `.swift`), otherwise
-   *                  Highlight.js will attempt to detect the language.
-   *   - theme:       The name of the theme to use.
-   *   - fontSize:    On macOS this Binding can be used to persist the size of
-   *                  the font in use. At runtime this is combined with the
-   *                  theme to produce the full font information.
-   *   - flags:       Configure whether the text is editable and/or selectable.
-   *   - indentStyle: Optionally insert a configurable amount of spaces if the
-   *                  user hits "tab".
-   *   - inset:       The editor can be inset in the scroll view. Defaults to
-   *                  8/8.
-   *   - autoPairs:   A mapping of open/close characters, where the close
-   *                  characters are automatically injected when the user enters
-   *                  the opening character. For example: `[ "<": ">" ]` would
-   *                  automatically insert the closing ">" if the user enters
-   *                  "<".
-   *   - autoscroll:  If enabled, the editor automatically scrolls to the respective
-   *                  region when the `selection` is changed programatically.
-   */
+
   public init(source      : Binding<String>,
               selection   : Binding<Range<String.Index>>,
               language    : CodeEditor.Language?,
@@ -81,36 +53,22 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
   @State private var autoPairs   : [ String : String ]
   @State private var autoscroll  : Bool
 
-  // The inner `value` is true, exactly when execution is inside
-  // the `updateTextView(_:)` method. The `Coordinator` can use this
-  // value to guard against update cycles.
-  // This needs to be a `State`, as the `UXCodeTextViewRepresentable`
-  // might be destructed and recreated in between calls to `makeCoordinator()`
-  // and `updateTextView(_:)`.
   @State private var isCurrentlyUpdatingView = ReferenceTypeBool(value: false)
   
-  // MARK: - TextView Delegate  Coordinator
-    
   public final class Coordinator: NSObject, UXCodeTextViewDelegate {
-    
-      @Binding var source: String
-      @Binding var selection: Range<String.Index>
-      @Binding var fontSize: CGFloat?
-      private var isCurrentlyUpdatingView: ReferenceTypeBool
-      var flags: CodeEditor.Flags
-//    var parent : UXCodeTextViewRepresentable
-    
-//    var fontSize : CGFloat? {
-//      set { if let value = newValue { parent.fontSize?.wrappedValue = value } }
-//      get { parent.fontSize?.wrappedValue }
-//    }
-    
-      init(source: Binding<String>, selection: Binding<Range<String.Index>>, fontSize: Binding<CGFloat?>, isCurrentlyUpdatingView: ReferenceTypeBool, flags: CodeEditor.Flags) {
-          self._source = source
-          self._selection = selection
-          self._fontSize = fontSize
-          self.isCurrentlyUpdatingView = isCurrentlyUpdatingView
-          self.flags = flags
+
+    @Binding var source: String
+    @Binding var selection: Range<String.Index>
+    @Binding var fontSize: CGFloat?
+    private var isCurrentlyUpdatingView: ReferenceTypeBool
+    var flags: CodeEditor.Flags
+
+    init(source: Binding<String>, selection: Binding<Range<String.Index>>, fontSize: Binding<CGFloat?>, isCurrentlyUpdatingView: ReferenceTypeBool, flags: CodeEditor.Flags) {
+      self._source = source
+      self._selection = selection
+      self._fontSize = fontSize
+      self.isCurrentlyUpdatingView = isCurrentlyUpdatingView
+      self.flags = flags
     }
     
     #if os(macOS)
@@ -120,7 +78,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
           return
         }
         textViewDidChange(textView: textView)
-      }    
+      }
     #elseif os(iOS) || os(visionOS)
       public func textViewDidChange(_ textView: UITextView) {
         textViewDidChange(textView: textView)
@@ -130,25 +88,21 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     #endif
       
     private func textViewDidChange(textView: UXTextView) {
-      // This function may be called as a consequence of updating the text string
-      //  in UXCodeTextViewRepresentable/updateTextView(_:)`.
-      // Since this function might update the `parent.source` `Binding`, which in
-      // turn might update a `State`, this would lead to undefined behavior.
-      // (Changing a `State` during a `View` update is not permitted).
       guard !isCurrentlyUpdatingView.value else {
         return
       }
-      
-      source = textView.string
+      if source != textView.string {
+        source = textView.string
+      }
     }
-      
+
     #if os(macOS)
       public func textViewDidChangeSelection(_ notification: Notification) {
         guard let textView = notification.object as? UXTextView else {
           assertionFailure("unexpected notification object")
           return
         }
-        
+
         textViewDidChangeSelection(textView: textView as! UXCodeTextView)
       }
     #elseif os(iOS) || os(visionOS)
@@ -160,32 +114,23 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     #endif
       
     private func textViewDidChangeSelection(textView: UXCodeTextView) {
-      // This function may be called as a consequence of updating the selected
-      // range in UXCodeTextViewRepresentable/updateTextView(_:)`.
-      // Since this function might update the `parent.selection` `Binding`, which in
-      // turn might update a `State`, this would lead to undefined behavior.
-      // (Changing a `State` during a `View` update is not permitted).
       guard !isCurrentlyUpdatingView.value else {
         return
       }
       
-//      guard let selection = selection else {
-//        return
-//      }
-
       let range = textView.swiftSelectedRange
-      
+
       if selection != range {
         selection = range
       }
     }
-    
+      
     var allowCopy: Bool {
       return flags.contains(.selectable)
           || flags.contains(.editable)
     }
   }
-    
+  
   public func makeCoordinator() -> Coordinator {
     return Coordinator(
         source: $source,
@@ -194,14 +139,14 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
         isCurrentlyUpdatingView: isCurrentlyUpdatingView,
         flags: flags)
   }
-  
+
   private func updateTextView(_ textView: UXCodeTextView) {
     isCurrentlyUpdatingView.value = true
     defer {
       isCurrentlyUpdatingView.value = false
     }
       
-      if let binding = fontSize {
+    if let binding = fontSize {
       textView.applyNewTheme(themeName, andFontSize: binding)
     }
     else {
@@ -223,26 +168,24 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
         textView.string = source
       }
     }
+
+    let range = selection
     
-//    if let selection = selection {
-      let range = selection
+    if range != textView.swiftSelectedRange {
+      let nsrange = NSRange(range, in: textView.string)
+      #if os(macOS)
+        textView.setSelectedRange(nsrange)
+      #elseif os(iOS) || os(visionOS)
+        textView.selectedRange = nsrange
+      #else
+        #error("Unsupported OS")
+      #endif
       
-      if range != textView.swiftSelectedRange {
-        let nsrange = NSRange(range, in: textView.string)
-        #if os(macOS)
-          textView.setSelectedRange(nsrange)
-        #elseif os(iOS) || os(visionOS)
-          textView.selectedRange = nsrange
-        #else
-          #error("Unsupported OS")
-        #endif
-        
-        if autoscroll {
-          textView.scrollRangeToVisible(nsrange)
-        }
-//      }
+      if autoscroll {
+        textView.scrollRangeToVisible(nsrange)
+      }
     }
-    
+
     textView.isEditable   = flags.contains(.editable)
     textView.isSelectable = flags.contains(.selectable)
   }
@@ -312,9 +255,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
 }
 
 extension UXCodeTextViewRepresentable {
-  // A wrapper around a `Bool` that enables updating
-  // the wrapped value during `View` renders.
-    class ReferenceTypeBool {
+  class ReferenceTypeBool {
     var value: Bool
       
     init(value: Bool) {
