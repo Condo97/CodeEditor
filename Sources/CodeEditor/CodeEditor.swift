@@ -231,7 +231,7 @@ public struct CodeEditor: View {
    */
   public init(source      : Binding<String>,
               selection   : Binding<Range<String.Index>>,
-              language    : Language?            = nil,
+              language    : Binding<Language?>   = .constant(nil),
               theme       : ThemeName            = .default,
               fontSize    : Binding<CGFloat?>,
               flags       : Flags                = .defaultEditorFlags,
@@ -244,13 +244,13 @@ public struct CodeEditor: View {
     self._source      = source
     self._selection   = selection
     self._fontSize    = fontSize
-    self.language    = language
+    self._language    = language
     self.themeName   = theme
     self.flags       = flags
     self.indentStyle = indentStyle
     self.inset       = inset ?? CGSize(width: 8, height: 8)
     self.autoPairs   = autoPairs
-                    ?? language.flatMap({ CodeEditor.defaultAutoPairs[$0] })
+      ?? language.wrappedValue.flatMap({ CodeEditor.defaultAutoPairs[$0] })
                     ?? [:]
     self.allowsUndo  = allowsUndo
     self.autoscroll  = autoscroll
@@ -282,7 +282,7 @@ public struct CodeEditor: View {
    */
   @inlinable
   public init(source      : String,
-              language    : Language?            = nil,
+              language    : Binding<Language?>   = .constant(nil),
               theme       : ThemeName            = .default,
               fontSize    : Binding<CGFloat?>    = .constant(nil),
               flags       : Flags                = .defaultViewerFlags,
@@ -307,7 +307,7 @@ public struct CodeEditor: View {
   @Binding private var source      : String
   @Binding private var selection   : Range<String.Index>
   @Binding private var fontSize    : CGFloat?
-  @State private var language    : Language?
+  @Binding private var language    : Language?
   @State private var themeName   : ThemeName
   @State private var flags       : Flags
   @State private var indentStyle : IndentStyle
@@ -319,7 +319,7 @@ public struct CodeEditor: View {
   public var body: some View {
       UXCodeTextViewRepresentable(source      : $source,
                                 selection   : $selection,
-                                language    : language,
+                                language    : $language,
                                 theme       : themeName,
                                 fontSize    : $fontSize,
                                 flags       : flags,
@@ -338,14 +338,14 @@ struct CodeEditor_Previews: PreviewProvider {
     CodeEditor(source: "let a = 5")
       .frame(width: 200, height: 100)
     
-    CodeEditor(source: "let a = 5", language: .swift, theme: .pojoaque)
+      CodeEditor(source: "let a = 5", language: .constant(.swift), theme: .pojoaque)
       .frame(width: 200, height: 100)
     
     CodeEditor(source:
       #"""
       The quadratic formula is $-b \pm \sqrt{b^2 - 4ac} \over 2a$
       \bye
-      """#, language: .tex
+      """#, language: .constant(.tex)
     )
     .frame(width: 540, height: 200)
   }
