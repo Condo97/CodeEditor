@@ -45,10 +45,10 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
    *                  region when the `selection` is changed programatically.
    */
   public init(source      : Binding<String>,
-              selection   : Binding<Range<String.Index>>?,
+              selection   : Binding<Range<String.Index>>,
               language    : CodeEditor.Language?,
               theme       : CodeEditor.ThemeName,
-              fontSize    : Binding<CGFloat>?,
+              fontSize    : Binding<CGFloat?>,
               flags       : CodeEditor.Flags,
               indentStyle : CodeEditor.IndentStyle,
               autoPairs   : [ String : String ],
@@ -70,8 +70,8 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
   }
     
   private var source      : Binding<String>
-  private var selection   : Binding<Range<String.Index>>?
-  private var fontSize    : Binding<CGFloat>?
+  private var selection   : Binding<Range<String.Index>>
+  private var fontSize    : Binding<CGFloat?>
   private let language    : CodeEditor.Language?
   private let themeName   : CodeEditor.ThemeName
   private let flags       : CodeEditor.Flags
@@ -93,15 +93,24 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     
   public final class Coordinator: NSObject, UXCodeTextViewDelegate {
     
-    var parent : UXCodeTextViewRepresentable
+      @Binding var source: String
+      @Binding var selection: Range<String.Index>
+      @Binding var fontSize: CGFloat?
+      private var isCurrentlyUpdatingView: ReferenceTypeBool
+      var flags: CodeEditor.Flags
+//    var parent : UXCodeTextViewRepresentable
     
-    var fontSize : CGFloat? {
-      set { if let value = newValue { parent.fontSize?.wrappedValue = value } }
-      get { parent.fontSize?.wrappedValue }
-    }
+//    var fontSize : CGFloat? {
+//      set { if let value = newValue { parent.fontSize?.wrappedValue = value } }
+//      get { parent.fontSize?.wrappedValue }
+//    }
     
-    init(_ parent: UXCodeTextViewRepresentable) {
-      self.parent = parent
+      init(source: Binding<String>, selection: Binding<Range<String.Index>>, fontSize: Binding<CGFloat?>, isCurrentlyUpdatingView: ReferenceTypeBool, flags: CodeEditor.Flags) {
+          self._source = source
+          self._selection = selection
+          self._fontSize = fontSize
+          self.isCurrentlyUpdatingView = isCurrentlyUpdatingView
+          self.flags = flags
     }
     
     #if os(macOS)
@@ -126,11 +135,11 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
       // Since this function might update the `parent.source` `Binding`, which in
       // turn might update a `State`, this would lead to undefined behavior.
       // (Changing a `State` during a `View` update is not permitted).
-      guard !parent.isCurrentlyUpdatingView.value else {
+      guard !isCurrentlyUpdatingView.value else {
         return
       }
       
-      parent.source.wrappedValue = textView.string
+      source = textView.string
     }
       
     #if os(macOS)
@@ -156,29 +165,34 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
       // Since this function might update the `parent.selection` `Binding`, which in
       // turn might update a `State`, this would lead to undefined behavior.
       // (Changing a `State` during a `View` update is not permitted).
-      guard !parent.isCurrentlyUpdatingView.value else {
+      guard !isCurrentlyUpdatingView.value else {
         return
       }
       
-      guard let selection = parent.selection else {
-        return
-      }
+//      guard let selection = selection else {
+//        return
+//      }
 
       let range = textView.swiftSelectedRange
       
-      if selection.wrappedValue != range {
-        selection.wrappedValue = range
+      if selection != range {
+        selection = range
       }
     }
     
     var allowCopy: Bool {
-      return parent.flags.contains(.selectable)
-          || parent.flags.contains(.editable)
+      return flags.contains(.selectable)
+          || flags.contains(.editable)
     }
   }
     
   public func makeCoordinator() -> Coordinator {
-    return Coordinator(self)
+    return Coordinator(
+        source: source,
+        selection: selection,
+        fontSize: fontSize,
+        isCurrentlyUpdatingView: isCurrentlyUpdatingView,
+        flags: flags)
   }
   
   private func updateTextView(_ textView: UXCodeTextView) {
@@ -187,8 +201,8 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
       isCurrentlyUpdatingView.value = false
     }
       
-    if let binding = fontSize {
-      textView.applyNewTheme(themeName, andFontSize: binding.wrappedValue)
+      if let binding = fontSize.wrappedValue {
+      textView.applyNewTheme(themeName, andFontSize: binding)
     }
     else {
       textView.applyNewTheme(themeName)
@@ -210,7 +224,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
       }
     }
     
-    if let selection = selection {
+//    if let selection = selection {
       let range = selection.wrappedValue
       
       if range != textView.swiftSelectedRange {
@@ -226,7 +240,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
         if autoscroll {
           textView.scrollRangeToVisible(nsrange)
         }
-      }
+//      }
     }
     
     textView.isEditable   = flags.contains(.editable)
@@ -300,7 +314,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
 extension UXCodeTextViewRepresentable {
   // A wrapper around a `Bool` that enables updating
   // the wrapped value during `View` renders.
-  private class ReferenceTypeBool {
+    class ReferenceTypeBool {
     var value: Bool
       
     init(value: Bool) {
@@ -314,10 +328,10 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
   static var previews: some View {
     
     UXCodeTextViewRepresentable(source      : .constant("let a = 5"),
-                                selection   : nil,
+                                selection   : .constant("".startIndex..<"".startIndex),
                                 language    : nil,
                                 theme       : .pojoaque,
-                                fontSize    : nil,
+                                fontSize    : .constant(nil),
                                 flags       : [ .selectable ],
                                 indentStyle : .system,
                                 autoPairs   : [:],
@@ -327,10 +341,10 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
       .frame(width: 200, height: 100)
     
     UXCodeTextViewRepresentable(source: .constant("let a = 5"),
-                                selection   : nil,
+                                selection   : .constant("".startIndex..<"".startIndex),
                                 language    : .swift,
                                 theme       : .pojoaque,
-                                fontSize    : nil,
+                                fontSize    : .constant(nil),
                                 flags       : [ .selectable ],
                                 indentStyle : .system,
                                 autoPairs   : [:],
@@ -346,10 +360,10 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
         \bye
         """#
       ),
-      selection   : nil,
+      selection   : .constant("".startIndex..<"".startIndex),
       language    : .tex,
       theme       : .pojoaque,
-      fontSize    : nil,
+      fontSize    : .constant(nil),
       flags       : [ .selectable ],
       indentStyle : .system,
       autoPairs   : [:],

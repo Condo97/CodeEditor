@@ -230,10 +230,10 @@ public struct CodeEditor: View {
    *                  region when the `selection` is changed programatically.
    */
   public init(source      : Binding<String>,
-              selection   : Binding<Range<String.Index>>? = nil,
+              selection   : Binding<Range<String.Index>>,
               language    : Language?            = nil,
               theme       : ThemeName            = .default,
-              fontSize    : Binding<CGFloat>?    = nil,
+              fontSize    : Binding<CGFloat?>,
               flags       : Flags                = .defaultEditorFlags,
               indentStyle : IndentStyle          = .system,
               autoPairs   : [ String : String ]? = nil,
@@ -284,7 +284,7 @@ public struct CodeEditor: View {
   public init(source      : String,
               language    : Language?            = nil,
               theme       : ThemeName            = .default,
-              fontSize    : Binding<CGFloat>?    = nil,
+              fontSize    : Binding<CGFloat?>    = .constant(nil),
               flags       : Flags                = .defaultViewerFlags,
               indentStyle : IndentStyle          = .system,
               autoPairs   : [ String : String ]? = nil,
@@ -293,6 +293,7 @@ public struct CodeEditor: View {
   {
     assert(!flags.contains(.editable), "Editing requires a Binding")
     self.init(source      : .constant(source),
+              selection: .constant("".startIndex..<"".startIndex),
               language    : language,
               theme       : theme,
               fontSize    : fontSize,
@@ -304,8 +305,8 @@ public struct CodeEditor: View {
   }
   
   private var source      : Binding<String>
-  private var selection   : Binding<Range<String.Index>>?
-  private var fontSize    : Binding<CGFloat>?
+  private var selection   : Binding<Range<String.Index>>
+  private var fontSize    : Binding<CGFloat?>
   private let language    : Language?
   private let themeName   : ThemeName
   private let flags       : Flags
