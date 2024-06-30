@@ -92,7 +92,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
         return
       }
       if source != textView.string {
-        source = textView.string
+          _source.wrappedValue = textView.string
       }
     }
 
