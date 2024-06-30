@@ -56,9 +56,9 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
               allowsUndo  : Bool,
               autoscroll  : Bool)
   {
-    self.source      = source
-    self.selection   = selection
-    self.fontSize    = fontSize
+    self._source      = source
+    self._selection   = selection
+    self._fontSize    = fontSize
     self.language    = language
     self.themeName   = theme
     self.flags       = flags
@@ -69,17 +69,17 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     self.autoscroll  = autoscroll
   }
     
-  private var source      : Binding<String>
-  private var selection   : Binding<Range<String.Index>>
-  private var fontSize    : Binding<CGFloat?>
-  private let language    : CodeEditor.Language?
-  private let themeName   : CodeEditor.ThemeName
-  private let flags       : CodeEditor.Flags
-  private let indentStyle : CodeEditor.IndentStyle
-  private let inset       : CGSize
-  private let allowsUndo: Bool
-  private let autoPairs   : [ String : String ]
-  private let autoscroll  : Bool
+  @Binding private var source      : String
+  @Binding private var selection   : Range<String.Index>
+  @Binding private var fontSize    : CGFloat?
+  @State private var language    : CodeEditor.Language?
+  @State private var themeName   : CodeEditor.ThemeName
+  @State private var flags       : CodeEditor.Flags
+  @State private var indentStyle : CodeEditor.IndentStyle
+  @State private var inset       : CGSize
+  @State private var allowsUndo: Bool
+  @State private var autoPairs   : [ String : String ]
+  @State private var autoscroll  : Bool
 
   // The inner `value` is true, exactly when execution is inside
   // the `updateTextView(_:)` method. The `Coordinator` can use this
@@ -188,9 +188,9 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     
   public func makeCoordinator() -> Coordinator {
     return Coordinator(
-        source: source,
-        selection: selection,
-        fontSize: fontSize,
+        source: $source,
+        selection: $selection,
+        fontSize: $fontSize,
         isCurrentlyUpdatingView: isCurrentlyUpdatingView,
         flags: flags)
   }
@@ -201,7 +201,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
       isCurrentlyUpdatingView.value = false
     }
       
-      if let binding = fontSize.wrappedValue {
+      if let binding = fontSize {
       textView.applyNewTheme(themeName, andFontSize: binding)
     }
     else {
@@ -213,19 +213,19 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     textView.isSmartIndentEnabled = flags.contains(.smartIndent)
     textView.autoPairCompletion   = autoPairs
 
-    if source.wrappedValue != textView.string {
+    if source != textView.string {
       if let textStorage = textView.codeTextStorage {
         textStorage.replaceCharacters(in   : NSMakeRange(0, textStorage.length),
-                                      with : source.wrappedValue)
+                                      with : source)
       }
       else {
         assertionFailure("no text storage?")
-        textView.string = source.wrappedValue
+        textView.string = source
       }
     }
     
 //    if let selection = selection {
-      let range = selection.wrappedValue
+      let range = selection
       
       if range != textView.swiftSelectedRange {
         let nsrange = NSRange(range, in: textView.string)

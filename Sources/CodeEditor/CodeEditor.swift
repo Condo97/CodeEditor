@@ -241,9 +241,9 @@ public struct CodeEditor: View {
               allowsUndo  : Bool                 = true,
               autoscroll  : Bool                 = true)
   {
-    self.source      = source
-    self.selection   = selection
-    self.fontSize    = fontSize
+    self._source      = source
+    self._selection   = selection
+    self._fontSize    = fontSize
     self.language    = language
     self.themeName   = theme
     self.flags       = flags
@@ -304,24 +304,24 @@ public struct CodeEditor: View {
               allowsUndo  : allowsUndo)
   }
   
-  private var source      : Binding<String>
-  private var selection   : Binding<Range<String.Index>>
-  private var fontSize    : Binding<CGFloat?>
-  private let language    : Language?
-  private let themeName   : ThemeName
-  private let flags       : Flags
-  private let indentStyle : IndentStyle
-  private let autoPairs   : [ String : String ]
-  private let inset       : CGSize
-  private let allowsUndo  : Bool
-  private let autoscroll  : Bool
+  @Binding private var source      : String
+  @Binding private var selection   : Range<String.Index>
+  @Binding private var fontSize    : CGFloat?
+  @State private var language    : Language?
+  @State private var themeName   : ThemeName
+  @State private var flags       : Flags
+  @State private var indentStyle : IndentStyle
+  @State private var autoPairs   : [ String : String ]
+  @State private var inset       : CGSize
+  @State private var allowsUndo  : Bool
+  @State private var autoscroll  : Bool
 
   public var body: some View {
-    UXCodeTextViewRepresentable(source      : source,
-                                selection   : selection,
+      UXCodeTextViewRepresentable(source      : $source,
+                                selection   : $selection,
                                 language    : language,
                                 theme       : themeName,
-                                fontSize    : fontSize,
+                                fontSize    : $fontSize,
                                 flags       : flags,
                                 indentStyle : indentStyle,
                                 autoPairs   : autoPairs,
