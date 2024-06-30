@@ -88,12 +88,12 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     #endif
       
     private func textViewDidChange(textView: UXTextView) {
-      guard !isCurrentlyUpdatingView.value else {
+      guard !isCurrentlyUpdatingView.value else 
+        {
         return
       }
-      if source != textView.string {
-          _source.wrappedValue = textView.string
-      }
+      
+      source = textView.string
     }
 
     #if os(macOS)
@@ -171,7 +171,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
 
     let range = selection
     
-    if range != textView.swiftSelectedRange {
+      if range != textView.swiftSelectedRange, textView.string.startIndex <= range.lowerBound, textView.string.endIndex >= range.upperBound {
       let nsrange = NSRange(range, in: textView.string)
       #if os(macOS)
         textView.setSelectedRange(nsrange)
