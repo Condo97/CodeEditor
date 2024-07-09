@@ -232,7 +232,7 @@ public struct CodeEditor: View {
   public init(source      : Binding<String>,
               selection   : Binding<Range<String.Index>>,
               language    : Binding<Language?>   = .constant(nil),
-              theme       : ThemeName            = .default,
+              theme       : Binding<ThemeName>            = .constant(.default),
               fontSize    : Binding<CGFloat?>,
               flags       : Flags                = .defaultEditorFlags,
               indentStyle : IndentStyle          = .system,
@@ -245,7 +245,7 @@ public struct CodeEditor: View {
     self._selection   = selection
     self._fontSize    = fontSize
     self._language    = language
-    self.themeName   = theme
+    self._themeName   = theme
     self.flags       = flags
     self.indentStyle = indentStyle
     self.inset       = inset ?? CGSize(width: 8, height: 8)
@@ -283,7 +283,7 @@ public struct CodeEditor: View {
   @inlinable
   public init(source      : String,
               language    : Binding<Language?>   = .constant(nil),
-              theme       : ThemeName            = .default,
+              theme       : Binding<ThemeName>            = .constant(.default),
               fontSize    : Binding<CGFloat?>    = .constant(nil),
               flags       : Flags                = .defaultViewerFlags,
               indentStyle : IndentStyle          = .system,
@@ -308,7 +308,7 @@ public struct CodeEditor: View {
   @Binding private var selection   : Range<String.Index>
   @Binding private var fontSize    : CGFloat?
   @Binding private var language    : Language?
-  @State private var themeName   : ThemeName
+  @Binding private var themeName   : ThemeName
   @State private var flags       : Flags
   @State private var indentStyle : IndentStyle
   @State private var autoPairs   : [ String : String ]
@@ -320,7 +320,7 @@ public struct CodeEditor: View {
       UXCodeTextViewRepresentable(source      : $source,
                                 selection   : $selection,
                                 language    : $language,
-                                theme       : themeName,
+                                theme       : $themeName,
                                 fontSize    : $fontSize,
                                 flags       : flags,
                                 indentStyle : indentStyle,
@@ -338,7 +338,7 @@ struct CodeEditor_Previews: PreviewProvider {
     CodeEditor(source: "let a = 5")
       .frame(width: 200, height: 100)
     
-      CodeEditor(source: "let a = 5", language: .constant(.swift), theme: .pojoaque)
+      CodeEditor(source: "let a = 5", language: .constant(.swift), theme: .constant(.pojoaque))
       .frame(width: 200, height: 100)
     
     CodeEditor(source:

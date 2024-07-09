@@ -19,7 +19,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
   public init(source      : Binding<String>,
               selection   : Binding<Range<String.Index>>,
               language    : Binding<CodeEditor.Language?>,
-              theme       : CodeEditor.ThemeName,
+              theme       : Binding<CodeEditor.ThemeName>,
               fontSize    : Binding<CGFloat?>,
               flags       : CodeEditor.Flags,
               indentStyle : CodeEditor.IndentStyle,
@@ -32,7 +32,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     self._selection   = selection
     self._fontSize    = fontSize
     self._language    = language
-    self.themeName   = theme
+    self._themeName   = theme
     self.flags       = flags
     self.indentStyle = indentStyle
     self.autoPairs   = autoPairs
@@ -45,7 +45,7 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
   @Binding private var selection   : Range<String.Index>
   @Binding private var fontSize    : CGFloat?
   @Binding private var language    : CodeEditor.Language?
-  @State private var themeName   : CodeEditor.ThemeName
+  @Binding private var themeName   : CodeEditor.ThemeName
   @State private var flags       : CodeEditor.Flags
   @State private var indentStyle : CodeEditor.IndentStyle
   @State private var inset       : CGSize
@@ -147,10 +147,10 @@ struct UXCodeTextViewRepresentable : UXViewRepresentable {
     }
       
     if let binding = fontSize {
-      textView.applyNewTheme(themeName, andFontSize: binding)
+        textView.applyNewTheme(themeName, andFontSize: binding)
     }
     else {
-      textView.applyNewTheme(themeName)
+        textView.applyNewTheme(themeName)
     }
     textView.language = language
     
@@ -271,7 +271,7 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
     UXCodeTextViewRepresentable(source      : .constant("let a = 5"),
                                 selection   : .constant("".startIndex..<"".startIndex),
                                 language    : .constant(nil),
-                                theme       : .pojoaque,
+                                theme       : .constant(.pojoaque),
                                 fontSize    : .constant(nil),
                                 flags       : [ .selectable ],
                                 indentStyle : .system,
@@ -284,7 +284,7 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
     UXCodeTextViewRepresentable(source: .constant("let a = 5"),
                                 selection   : .constant("".startIndex..<"".startIndex),
                                 language    : .constant(.swift),
-                                theme       : .pojoaque,
+                                theme       : .constant(.pojoaque),
                                 fontSize    : .constant(nil),
                                 flags       : [ .selectable ],
                                 indentStyle : .system,
@@ -303,7 +303,7 @@ struct UXCodeTextViewRepresentable_Previews: PreviewProvider {
       ),
       selection   : .constant("".startIndex..<"".startIndex),
       language    : .constant(.tex),
-      theme       : .pojoaque,
+      theme       : .constant(.pojoaque),
       fontSize    : .constant(nil),
       flags       : [ .selectable ],
       indentStyle : .system,
